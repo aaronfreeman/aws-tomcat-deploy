@@ -1,0 +1,12 @@
+apply plugin: 'groovy'
+
+dependencies {
+    compile  gradleApi(),
+             'com.amazonaws:aws-java-sdk:1.2.14',
+             'ch.ethz.ganymed:ganymed-ssh2:build210'
+    groovy localGroovy()
+}
+
+repositories {
+   mavenCentral()
+}
