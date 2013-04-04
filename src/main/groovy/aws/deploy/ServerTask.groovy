@@ -6,42 +6,43 @@ import com.amazonaws.services.ec2.model.*
 import com.amazonaws.services.elasticloadbalancing.*
 import com.amazonaws.services.elasticloadbalancing.model.*
 import com.amazonaws.services.s3.*
-import com.amazonaws.auth.*
 
 class ServerTask {
-   private AWSCredentials credentials
    AwsTomcatDeployPluginExtension options
    Project project
 
    def deploy() {
-      def loadBalancer = options.loadBalancers[options.deployLevel]
-      def serverIds = loadServerIds(loadBalancer)
+      def serverIds = loadServerIds()
       def hostMap = loadHostMap(serverIds)
       if(serverIds.size() > 0) {
          def key = System.currentTimeMillis().toString()
-         if(options.useS3)
-            options.warPath = uploadWarFile(key)
+         options.useS3 = options.useS3 && serverIds.size() > 1
+         options.warPath = options.useS3 ? uploadWarFile(key) : project.file(options.warPath)
          try {
             for(id in serverIds)
-               deployToServer(loadBalancer, hostMap[id], id)
+               deployToServer(hostMap[id], id)
          } finally {
             if(options.useS3)
                deleteUploadedWarFile(key)
          }
+      } else {
+         println 'Did not find any servers to update. You must specify the serverId or loadBalancer property. If you are using a load balancer, the servers you want to update must already be associated with the load balancer.'
       }
    }
    
    private loadHostMap(serverIds) {
-      def client = new AmazonEC2Client(awsCredentials)
+      def client = new AmazonEC2Client(options.awsCredentials)
       def request = new DescribeInstancesRequest().withInstanceIds(serverIds)
       def result = client.describeInstances(request)
       return result.reservations*.instances.flatten().collectEntries{[it.instanceId,it.publicDnsName]}
    }
    
-   private loadServerIds(loadBalancer) {
-      def client = new AmazonElasticLoadBalancingClient(awsCredentials)
+   private loadServerIds() {
+      if(!options.loadBalancer)
+         return options.serverId ? [options.serverId] : []
+      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new DescribeInstanceHealthRequest()
-      request.setLoadBalancerName(loadBalancer)
+      request.setLoadBalancerName(options.loadBalancer)
       def result = client.describeInstanceHealth(request)
       def ids = []
       result.instanceStates.each {
@@ -55,40 +56,47 @@ class ServerTask {
 
    private uploadWarFile(key) {
       println 'Uploading new war file'
-      def client = new AmazonS3Client(awsCredentials)
+      def client = new AmazonS3Client(options.awsCredentials)
       client.putObject(options.s3bucket, key, project.file(options.warPath))
       def url = client.generatePresignedUrl(options.s3bucket, key, new Date(System.currentTimeMillis() + 600000))
       url.toString()
    }
 
    private deleteUploadedWarFile(key) {
-      new AmazonS3Client(awsCredentials).deleteObject(options.s3bucket, key)
+      new AmazonS3Client(options.awsCredentials).deleteObject(options.s3bucket, key)
    }
    
    def addServer() {
-      def hostMap = loadHostMap([options.newServerId])
-      deployToServer(loadBalancers[options.deployLevel], hostMap[options.newServerId], options.newServerId, true)
+      if(!options.serverId) {
+         println 'You must set the serverId property to add a server to a load balancer'
+      } else if(!options.loadBalancer) {
+         println 'You must set the loadBalancer property to the name of the load balancer you want this server added to'
+      } else {
+         println 'Adding ' + options.serverId + ' to ' + options.loadBalancer
+         options.useS3 = false
+         options.warPath = project.file(options.warPath)
+         def hostMap = loadHostMap([options.serverId])
+         deployToServer(hostMap[options.serverId], options.serverId, true)
+      }
    }
    
-   private deployToServer(loadBalancer, serverHost, serverId, newServer = false) {
-      new Server(awsCredentials, loadBalancer, serverHost, serverId, project, options).deploy(options.warPath, newServer)
+   private deployToServer(serverHost, serverId, newServer = false) {
+      new Server(options: options, host: serverHost, id: serverId).deploy(newServer)
    }
    
    def getLogs () {
-      def loadBalancer = options.loadBalancers[options.deployLevel]
-      def serverIds = loadServerIds(loadBalancer)
+      def serverIds = loadServerIds()
       def hostMap = loadHostMap(serverIds)
-      for(id in serverIds)
-         getLog(loadBalancer, hostMap[id], id)
+      if(serverIds.size() > 0) {
+         for(id in serverIds)
+            getLog(hostMap[id], id)
+      } else {
+         println 'Did not find any servers to get logs for. You must specify the serverId or loadBalancer property.'
+      }
    }
    
-   private getLog(loadBalancer, serverHost, serverId) {
-      new Server(awsCredentials, loadBalancer, serverHost, serverId, project, options).copyLogFile('logs/' + options.deployLevel)
-   }
-
-   private getAwsCredentials() {
-      if(credentials == null)
-         credentials = new BasicAWSCredentials(options.accessKey, options.secretKey)
-      credentials
+   private getLog(serverHost, serverId) {
+      def destDir = options.localLogsDir ? options.localLogsDir : options.loadBalancer ? 'logs/' + options.loadBalancer : 'logs'
+      new Server(options: options, host: serverHost, id: serverId).copyLogFile(project.file(destDir))
    }
 }

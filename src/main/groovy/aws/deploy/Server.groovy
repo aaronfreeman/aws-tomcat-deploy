@@ -9,33 +9,23 @@ import com.amazonaws.services.elasticloadbalancing.model.*
 
 class Server {
    static final String delim = "^^^^^command complete^^^^^"
-   Connection connection
-   AWSCredentials credentials
-   String loadBalancer, host, id
    AwsTomcatDeployPluginExtension options
-   Project project
-   
-   public Server(credentials, loadBalancer, host, id, project, options) {
-      this.credentials = credentials
-      this.loadBalancer = loadBalancer
-      this.host = host
-      this.id = id
-      this.options = options
-      this.project = project
-   }
+   Connection connection
+   String host, id
 
-   def deploy(warFile, newServer) {
+   def deploy(newServer) {
       if(!newServer)
          removeFromLoadBalancer()
       connect()
       try {
          stopTomcat()
          deleteOldApp()
-         copyNewApp(warFile)
+         copyNewApp()
          startTomcat()
       } catch (e) {
          stopTomcat()
-         addToLoadBalancer()
+         if(!newServer)
+            addToLoadBalancer()
          throw e
       } finally {
          disconnect()
@@ -45,13 +35,13 @@ class Server {
       println 'Finished ' + id + '\n'
    }
    
-   def stopTomcat() {
+   private stopTomcat() {
       doSudo('service ' + options.tomcatServiceName + ' stop', 'Stopping server')
       if(cmd('ps -A | grep java').contains('java'))
          throw new RuntimeException('Failed to stop Tomcat')
    }
    
-   def deleteOldApp() {
+   private deleteOldApp() {
       def appDir = options.tomcatPath + '/webapps/' + options.appContext
       doSudo('rm -fr "' + appDir + '" "' + appDir + '.war"', 'Deleting old app')
       if(cmd('ls ' + options.tomcatPath + '/webapps').contains(options.appContext))
@@ -63,23 +53,23 @@ class Server {
       }
    }
 
-   def copyNewApp(warFile) {
+   private copyNewApp() {
       if(options.useS3)
-         doSudo('wget -qO ' + options.tomcatPath + '/webapps/' + options.appContext + '.war "' + warFile + '"', 'Downloading new app')
+         doSudo('wget -qO ' + options.tomcatPath + '/webapps/' + options.appContext + '.war "' + options.warPath + '"', 'Downloading new app')
       else {
          println 'Copying new app'
-         connection.createSCPClient().put(project.file(warFile), options.appContext + '.war', options.tomcatPath + '/webapps', '0644')
+         connection.createSCPClient().put(options.warPath, options.appContext + '.war', options.tomcatPath + '/webapps', '0644')
       }
    }
    
-   def startTomcat() {
+   private startTomcat() {
       doSudo('service ' + options.tomcatServiceName + ' start', 'Starting server')
       watchLog()
       if(options.pingServer)
          pingServer()
    }
    
-   def watchLog() {
+   private watchLog() {
       def log = ""
       for(i in 1..40) {
          log = cmd('cat ' + options.tomcatPath + '/logs/catalina.out')
@@ -93,22 +83,22 @@ class Server {
       throw new GradleException('Failed to start server')
    }
    
-   def printIfNotNull(message) {
+   private printIfNotNull(message) {
       if(message)
          println message
    }
    
-   def pingServer() {
+   private pingServer() {
       new URL(options.pingProtocol + "://" + host + options.pingPath).getText()
       watchLog()
    }
    
-   def doSudo(command, message) {
+   private doSudo(command, message) {
       printIfNotNull(message)
       print sudo(command)
    }
    
-   def cmd(command) {
+   private cmd(command) {
       def session = connection.openSession()
       session.execCommand(command + '; echo "' + delim + '"')
 
@@ -125,22 +115,22 @@ class Server {
       return response.toString()
    }
    
-   def sudo(command) {
+   private sudo(command) {
       return cmd("sudo " + command)
    }
    
    def copyLogFile(destDir) {
-      new File(destDir).mkdirs()
+      destDir.mkdirs()
       connect()
       try {
-         connection.createSCPClient().get(options.tomcatPath + '/logs/catalina.out', new FileOutputStream(destDir + '/' + id + '.log'))
+         connection.createSCPClient().get(options.tomcatPath + '/logs/catalina.out', new FileOutputStream(new File(destDir, id + '.log')))
       } finally {
          disconnect()
       }
    }
 
-   def connect() {
-      println 'Connecting to ' + host
+   private connect() {
+      println 'Connecting to ' + id + ' at ' + host
       connection = new Connection(host)
       connection.connect()
       boolean isAuthenticated = connection.authenticateWithPublicKey(options.deployUser, new File(options.sshKeyPath), '')
@@ -149,39 +139,45 @@ class Server {
          throw new IOException("Authentication failed.")
    }
 
-   def disconnect() {
+   private disconnect() {
       if(connection)
          connection.close()
    }
    
-   def removeFromLoadBalancer() {
+   private removeFromLoadBalancer() {
+      if(!options.loadBalancer)
+         return
       println 'Removing ' + id + ' from load balancer'
-      def client = new AmazonElasticLoadBalancingClient(credentials)
+      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new DeregisterInstancesFromLoadBalancerRequest()
       def response = client.deregisterInstancesFromLoadBalancer(populatLoadBalancerRequest(request))
       for(instance in response.instances)
          if(instance.instanceId == id)
-            throw new RuntimeException("Faild to remove " + id + " from load balancer " + loadBalancer)
+            throw new RuntimeException("Faild to remove " + id + " from load balancer " + options.loadBalancer)
    }
    
-   def populatLoadBalancerRequest(request) {
-      request.setLoadBalancerName(loadBalancer)
+   private populatLoadBalancerRequest(request) {
+      request.setLoadBalancerName(options.loadBalancer)
       request.setInstances([new Instance(id)])
       return request
    }
    
-   def addToLoadBalancer() {
+   private addToLoadBalancer() {
+      if(!options.loadBalancer)
+         return
       println 'Adding ' + id + ' to load balancer'
-      def client = new AmazonElasticLoadBalancingClient(credentials)
+      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new RegisterInstancesWithLoadBalancerRequest()
       def response = client.registerInstancesWithLoadBalancer(populatLoadBalancerRequest(request))
       for(instance in response.instances)
          if(instance.instanceId == id) 
             return
-      throw new RuntimeException("Faild to add " + id + " to load balancer " + loadBalancer)
+      throw new RuntimeException("Faild to add " + id + " to load balancer " + options.loadBalancer)
    }
    
-   def waitForInstanceRegistration() {
+   private waitForInstanceRegistration() {
+      if(!options.loadBalancer)
+         return
       println 'Waiting for instance registration'
       for(i in 1..60)
          if(getInstanceState(id) == 'InService')
@@ -191,10 +187,10 @@ class Server {
       throw new RuntimeException("Instance never became healthy")
    }
    
-   def getInstanceState(id) {
-      def client = new AmazonElasticLoadBalancingClient(credentials)
+   private getInstanceState(id) {
+      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new DescribeInstanceHealthRequest()
-      request.setLoadBalancerName(loadBalancer)
+      request.setLoadBalancerName(options.loadBalancer)
       request.setInstances([new Instance(id)])
       def result = client.describeInstanceHealth(request)
       return result.instanceStates*.state[0]

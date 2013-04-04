@@ -2,6 +2,7 @@ package aws.deploy
 
 import org.gradle.api.Project
 import org.gradle.api.Plugin
+import com.amazonaws.auth.*
 
 class AwsTomcatDeployPlugin implements Plugin<Project> {
     void apply(Project project) {
@@ -20,15 +21,17 @@ class AwsTomcatDeployPlugin implements Plugin<Project> {
 }
 
 class AwsTomcatDeployPluginExtension {
-	String deployLevel = ''
+    private AWSCredentials credentials
+	
+	String loadBalancer = null
+	String serverId = null
 	String deployUser = 'ec2-user'
 	String sshKeyPath = '~/.ssh/id_rsa'
-	Map loadBalancers = [:]
 	String accessKey = ''
 	String secretKey = ''
 	String tomcatPath = '/opt/tomcat'
 	String tomcatServiceName = 'tomcat'
-	String warPath = ''
+	String warPath = null
 	String appContext = 'ROOT'
 	boolean deleteOldLogs = true
 	boolean useS3 = true
@@ -36,5 +39,11 @@ class AwsTomcatDeployPluginExtension {
 	boolean pingServer = true
 	String pingProtocol = 'http'
 	String pingPath = '/'
-	String newServerId = System.properties['serverId']
+	String localLogsDir = null
+
+   def getAwsCredentials() {
+      if(credentials == null)
+         credentials = new BasicAWSCredentials(accessKey, secretKey)
+      credentials
+   }
 }
