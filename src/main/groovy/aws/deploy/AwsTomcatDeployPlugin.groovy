@@ -26,7 +26,7 @@ class AwsTomcatDeployPluginExtension {
 	String loadBalancer = null
 	String serverId = null
 	String deployUser = 'ec2-user'
-	String sshKeyPath = '~/.ssh/id_rsa'
+	String sshKeyPath = System.getProperty('user.home') + '/.ssh/id_rsa'
 	String accessKey = ''
 	String secretKey = ''
 	String tomcatPath = '/opt/tomcat'
@@ -34,7 +34,7 @@ class AwsTomcatDeployPluginExtension {
 	String warPath = null
 	String appContext = 'ROOT'
 	boolean deleteOldLogs = true
-	boolean useS3 = true
+	boolean useS3 = false
 	String s3bucket = ''
 	boolean pingServer = true
 	String pingProtocol = 'http'
