@@ -27,7 +27,7 @@ buildscript {
 
 apply plugin: 'aws.tomcat.deploy'
 
-// These are the configuration options, the defaul values are shown
+// These are the configuration options, the defaul values are shown, if you don't want to change the default you can just delete the line
 
 awsTomcatDeploy {
 	accessKey = '' 					// These are your Amazon keys, they give the script access to your server list and load balancers
