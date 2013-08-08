@@ -18,7 +18,7 @@ buildscript {
    repositories {
       mavenCentral()
       ivy {
-        url "https://raw.github.com/aaronfreeman/repo/master"
+        url "https://raw.github.com/adelo/repo/master"
         layout "pattern", {
             artifact "[module]/[revision]/[artifact].[ext]"
         }
