@@ -1,8 +1,8 @@
 aws-tomcat-deploy
 =================
 
-A gradle plugin for deploying Java and Grails applications to Tomcat on AWS Linux. It can interact AWS ELB to update several servers, and connects to each server
-user SSH to stop the application, update it, then start it back up.
+A gradle plugin for deploying Java and Grails applications to Tomcat on AWS Linux. It can interact with AWS ELB to update several servers, and connects to each server
+using SSH to stop the application, update it, then start it back up.
 
 Three tasks are defined:
 	deploy - this will deploy the application to the server
