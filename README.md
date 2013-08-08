@@ -9,8 +9,11 @@ Three tasks are defined:
 	addServer - this will deploy the application to a new server, and add it to a load balancer
 	getLogs - this will pull the catalina.out file from each server and copy them to your local machine
 
+=================
+
 To use this, put this in your build.gradle file:
 
+```
 buildscript {
    repositories {
       mavenCentral()
@@ -62,3 +65,4 @@ awsTomcatDeploy {
 	
 	localLogsDir = null				// The directory to use to put the logs in when getLogs is called
 }
+```
