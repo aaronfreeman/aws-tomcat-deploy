@@ -1,14 +1,15 @@
 aws-tomcat-deploy
 =================
 
-A gradle script for deploying Java and Grails applications to Tomcat on AWS Linux
+A gradle script for deploying Java and Grails applications to Tomcat on AWS Linux. It can interact AWS ELB to update several servers, and connects to each server
+user SSH to stop the application, update it, then start it back up.
 
 Three tasks are defined:
 	deploy - this will deploy the application to the server
 	addServer - this will deploy the application to a new server, and add it to a load balancer
 	getLogs - this will pull the catalina.out file from each server and copy them to your local machine
 
-To use this, put this in your build.gradle file, then call the 'deploy' task:
+To use this, put this in your build.gradle file:
 
 buildscript {
    repositories {
