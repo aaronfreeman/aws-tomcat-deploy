@@ -21,7 +21,7 @@ buildscript {
   }
 
   dependencies { 
-    classpath 'com.adelo:aws-tomcat-deploy:1.0', 'com.amazonaws:aws-java-sdk:1.3.20', 'ch.ethz.ganymed:ganymed-ssh2:build210'
+    classpath 'com.adelo:aws-tomcat-deploy:1.0.1', 'com.amazonaws:aws-java-sdk:1.3.20', 'ch.ethz.ganymed:ganymed-ssh2:build210'
   }
 }
 
