@@ -40,6 +40,7 @@ class AwsTomcatDeployPluginExtension {
 	String pingProtocol = 'http'
 	String pingPath = '/'
 	String localLogsDir = null
+  int maxServerStartWaitTime = 90
 
    def getAwsCredentials() {
       if(credentials == null)

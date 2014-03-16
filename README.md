@@ -21,7 +21,7 @@ buildscript {
   }
 
   dependencies { 
-    classpath 'com.adelo:aws-tomcat-deploy:1.0.1', 'com.amazonaws:aws-java-sdk:1.3.20', 'ch.ethz.ganymed:ganymed-ssh2:build210'
+    classpath 'com.adelo:aws-tomcat-deploy:1.0.2', 'com.amazonaws:aws-java-sdk:1.3.20', 'ch.ethz.ganymed:ganymed-ssh2:build210'
   }
 }
 
@@ -57,5 +57,6 @@ awsTomcatDeploy {
 	pingPath = '/'					// The url path to ping
 	
 	localLogsDir = null				// The directory to use to put the logs in when getLogs is called
+	maxServerStartWaitTime = 90     // The max time in seconds the build will wiat for the server to start before it makes the build as failed
 }
 ```

@@ -65,14 +65,15 @@ class Server {
    
    private startTomcat() {
       doSudo('service ' + options.tomcatServiceName + ' start', 'Starting server')
-      watchLog()
+      watchLog(options.maxServerStartWaitTime)
       if(options.pingServer)
          pingServer()
    }
    
-   private watchLog() {
+   private watchLog(maxWaitTime) {
       def log = ""
-      for(i in 1..40) {
+      def count = 0
+      while(count++ < (maxWaitTime/2)) {
          log = cmd('cat ' + options.tomcatPath + '/logs/catalina.out')
          if(log.contains('Exception'))
             break;
@@ -91,7 +92,7 @@ class Server {
    
    private pingServer() {
       new URL(options.pingProtocol + "://" + host + options.pingPath).getText()
-      watchLog()
+      watchLog(30)
    }
    
    private doSudo(command, message) {
