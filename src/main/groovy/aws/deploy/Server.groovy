@@ -13,6 +13,15 @@ class Server {
    Connection connection
    String host, id
    AmazonElasticLoadBalancingClient elbClient
+   
+   def restart() {
+      connect()
+      try {
+         restartTomcat()
+      } finally {
+         disconnect()
+      }
+   }
 
    def deploy(newServer) {
       if(!newServer)
@@ -43,6 +52,23 @@ class Server {
       def pid = cmd('cat ' + options.tomcatPath + '/tomcat.pid')
       if(cmd("ps -A | grep '^ ${pid} '").contains('java'))
          throw new RuntimeException('Failed to stop Tomcat')
+   }
+   
+   private restartTomcat() {
+	  removeFromLoadBalancer()
+	  
+	  try {
+		stopTomcat()
+		startTomcat()
+	  } catch (e) {
+		stopTomcat()
+		throw e
+	  } finally {
+		addToLoadBalancer()
+	  }
+	  
+	  waitForInstanceRegistration()
+	  println 'Finished ' + id + '\n'
    }
    
    private deleteOldApp() {

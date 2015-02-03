@@ -80,8 +80,24 @@ class ServerTask {
       }
    }
    
+   def restartServer() {
+	  if (!options.serverId) {
+		println 'You must set the serverId property in order to restart a server'
+	  } else if(!options.loadBalancer) {
+         println 'You must set the loadBalancer property to the name of the load balancer you want this server added to'
+      } else {
+         println 'Adding ' + options.serverId + ' to ' + options.loadBalancer
+         def hostMap = loadHostMap([options.serverId])
+         doRestart(hostMap[options.serverId], options.serverId)
+      }
+   }
+   
    private deployToServer(serverHost, serverId, newServer = false) {
       new Server(options: options, host: serverHost, id: serverId).deploy(newServer)
+   }
+   
+   private doRestart(serverHost, serverId) {
+	  new Server(options: options, host: serverHost, id: serverId).restart()
    }
    
    def getLogs () {

@@ -17,6 +17,9 @@ class AwsTomcatDeployPlugin implements Plugin<Project> {
         project.task('getLogs') << {
         	serverTask.getLogs()
         }
+		project.task('restart') << {
+			serverTask.restartServer()
+		}
     }
 }
 
