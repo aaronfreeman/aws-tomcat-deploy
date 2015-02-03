@@ -49,7 +49,7 @@ class Server {
    
    private stopTomcat() {
       doSudo('service ' + options.tomcatServiceName + ' stop', 'Stopping server')
-      def pid = cmd('cat ' + options.tomcatPath + '/tomcat.pid')
+      def pid = cmd('cat ' + options.pidPath)
       if(cmd("ps -A | grep '^ ${pid} '").contains('java'))
          throw new RuntimeException('Failed to stop Tomcat')
    }

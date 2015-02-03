@@ -33,6 +33,7 @@ class AwsTomcatDeployPluginExtension {
 	String accessKey = ''
 	String secretKey = ''
 	String tomcatPath = '/opt/tomcat'
+	String pidPath = '/opt/tomcat/tomcat.pid'
 	String tomcatServiceName = 'tomcat'
 	String warPath = null
 	String appContext = 'ROOT'
