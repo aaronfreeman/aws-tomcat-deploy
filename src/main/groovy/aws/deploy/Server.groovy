@@ -12,12 +12,15 @@ class Server {
    AwsTomcatDeployPluginExtension options
    Connection connection
    String host, id
+   AmazonElasticLoadBalancingClient elbClient
 
    def deploy(newServer) {
       if(!newServer)
          removeFromLoadBalancer()
       connect()
       try {
+		 elbClient = new AmazonElasticLoadBalancingClient(options.awsCredentials)
+
          stopTomcat()
          deleteOldApp()
          copyNewApp()
@@ -150,9 +153,8 @@ class Server {
       if(!options.loadBalancer)
          return
       println 'Removing ' + id + ' from load balancer'
-      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new DeregisterInstancesFromLoadBalancerRequest()
-      def response = client.deregisterInstancesFromLoadBalancer(populatLoadBalancerRequest(request))
+      def response = elbClient.deregisterInstancesFromLoadBalancer(populatLoadBalancerRequest(request))
       for(instance in response.instances)
          if(instance.instanceId == id)
             throw new RuntimeException("Faild to remove " + id + " from load balancer " + options.loadBalancer)
@@ -168,9 +170,8 @@ class Server {
       if(!options.loadBalancer)
          return
       println 'Adding ' + id + ' to load balancer'
-      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new RegisterInstancesWithLoadBalancerRequest()
-      def response = client.registerInstancesWithLoadBalancer(populatLoadBalancerRequest(request))
+      def response = elbClient.registerInstancesWithLoadBalancer(populatLoadBalancerRequest(request))
       for(instance in response.instances)
          if(instance.instanceId == id) 
             return
@@ -190,11 +191,10 @@ class Server {
    }
    
    private getInstanceState(id) {
-      def client = new AmazonElasticLoadBalancingClient(options.awsCredentials)
       def request = new DescribeInstanceHealthRequest()
       request.setLoadBalancerName(options.loadBalancer)
       request.setInstances([new Instance(id)])
-      def result = client.describeInstanceHealth(request)
+      def result = elbClient.describeInstanceHealth(request)
       return result.instanceStates*.state[0]
    }
 }
