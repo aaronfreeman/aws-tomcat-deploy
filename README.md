@@ -17,11 +17,11 @@ To use this, put this in your build.gradle file:
 buildscript {
   repositories {
     mavenCentral()
-    ivy { url "https://raw.github.com/adelo/repo/master" }
+    ivy { url "https://raw.github.com/aaronfreeman/repo/master" }
   }
 
   dependencies { 
-    classpath 'com.adelo:aws-tomcat-deploy:1.0.2', 'com.amazonaws:aws-java-sdk:1.3.20', 'ch.ethz.ganymed:ganymed-ssh2:build210'
+    classpath 'zone.freeman:aws-tomcat-deploy:1.0.2', 'com.amazonaws:aws-java-sdk:1.3.20', 'ch.ethz.ganymed:ganymed-ssh2:build210'
   }
 }
 
