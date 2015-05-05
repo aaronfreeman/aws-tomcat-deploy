@@ -23,13 +23,18 @@ class Server {
       }
    }
 
+   private getClient() {
+      if(!elbClient)
+         elbClient = new AmazonElasticLoadBalancingClient(options.awsCredentials)
+
+      return elbClient
+   }
+
    def deploy(newServer) {
       if(!newServer)
          removeFromLoadBalancer()
       connect()
       try {
-		 elbClient = new AmazonElasticLoadBalancingClient(options.awsCredentials)
-
          stopTomcat()
          deleteOldApp()
          copyNewApp()
@@ -180,7 +185,7 @@ class Server {
          return
       println 'Removing ' + id + ' from load balancer'
       def request = new DeregisterInstancesFromLoadBalancerRequest()
-      def response = elbClient.deregisterInstancesFromLoadBalancer(populatLoadBalancerRequest(request))
+      def response = client.deregisterInstancesFromLoadBalancer(populatLoadBalancerRequest(request))
       for(instance in response.instances)
          if(instance.instanceId == id)
             throw new RuntimeException("Faild to remove " + id + " from load balancer " + options.loadBalancer)
@@ -197,7 +202,7 @@ class Server {
          return
       println 'Adding ' + id + ' to load balancer'
       def request = new RegisterInstancesWithLoadBalancerRequest()
-      def response = elbClient.registerInstancesWithLoadBalancer(populatLoadBalancerRequest(request))
+      def response = client.registerInstancesWithLoadBalancer(populatLoadBalancerRequest(request))
       for(instance in response.instances)
          if(instance.instanceId == id) 
             return
@@ -220,7 +225,7 @@ class Server {
       def request = new DescribeInstanceHealthRequest()
       request.setLoadBalancerName(options.loadBalancer)
       request.setInstances([new Instance(id)])
-      def result = elbClient.describeInstanceHealth(request)
+      def result = client.describeInstanceHealth(request)
       return result.instanceStates*.state[0]
    }
 }
