@@ -34,7 +34,7 @@ class ServerTask {
       def client = new AmazonEC2Client(options.awsCredentials)
       def request = new DescribeInstancesRequest().withInstanceIds(serverIds)
       def result = client.describeInstances(request)
-      return result.reservations*.instances.flatten().collectEntries{[it.instanceId,it.publicDnsName]}
+      return result.reservations*.instances.flatten().collectEntries{[it.instanceId, (options.usePrivateIpAddress ? it.privateIpAddress : it.publicIpAddress)]}
    }
    
    private loadServerIds() {
