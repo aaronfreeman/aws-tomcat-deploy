@@ -111,7 +111,7 @@ class Server {
          log = cmd('cat ' + options.tomcatLogFilePath)
          if(log.contains('Exception'))
             break;
-         else if(log.contains(option.tomcatStartedText))
+         else if(log.contains(options.tomcatStartedText))
             return
          sleep(2000)
       }
