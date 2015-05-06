@@ -35,6 +35,8 @@ class AwsTomcatDeployPluginExtension {
   String secretKey = ''
   String tomcatPath = '/opt/tomcat'
   String pidPath = '/opt/tomcat/tomcat.pid'
+  String tomcatLogFilePath = '/opt/tomcat/logs/catalina.out'
+  String tomcatStartedText = 'Server startup in '
   String tomcatServiceName = 'tomcat'
   String warPath = null
   String appContext = 'ROOT'

@@ -108,10 +108,10 @@ class Server {
       def log = ""
       def count = 0
       while(count++ < (maxWaitTime/2)) {
-         log = cmd('cat ' + options.tomcatPath + '/logs/catalina.out')
+         log = cmd('cat ' + options.tomcatLogFilePath)
          if(log.contains('Exception'))
             break;
-         else if(log.contains('INFO: Server startup in '))
+         else if(log.contains(option.tomcatStartedText))
             return
          sleep(2000)
       }

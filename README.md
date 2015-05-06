@@ -41,6 +41,8 @@ awsTomcatDeploy {
 	
 	tomcatPath = '/opt/tomcat'		// The locaiton of the installation director of Tomcat on the server
 	tomcatServiceName = 'tomcat'	// The name of ther tomcat service on the server
+	tomcatLogFilePath = '/opt/tomcat/logs/catalina.out' // This is the path to the log file that will be watch when tomcat is stared
+	tomcatStartedText = 'Server startup in ' // This is the text the task will look for in the tomcat log file to see if the service started
 	
 	warPath = null					// The local path to the war file you are deploying
 	appContext = 'ROOT'				// The context root you want the app to have on the server
@@ -48,10 +50,12 @@ awsTomcatDeploy {
 	deleteOldLogs = true			// If true the script will delete old server logs when it deploys
 
 	useS3 = false					// If true the script will upload the war to an S3 bucket and pull it down from there on each server
-									// this is useful if you deploy from a machine with slow internet so you don't have to upload the war
-									// to each server
+												// this is useful if you deploy from a machine with slow internet so you don't have to upload the war
+												// to each server
 	s3bucket = ''					// The name of the S3 bucket to use, the script will delete the war from the bucket once the deploy is done
-	
+
+	usePrivateIpAddress = false // This tells the script to use the EC2 server's private IP address. This is useful if the script is being run
+	                      			// from within a VPC and the server is not accessable outside the VPC
 	pingServer = true				// True if you want the script to ping the server after start up to make sure it is running
 	pingProtocol = 'http'			// The protocol to use on the ping
 	pingPath = '/'					// The url path to ping
