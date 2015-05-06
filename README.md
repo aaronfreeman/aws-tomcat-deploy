@@ -21,7 +21,7 @@ buildscript {
   }
 
   dependencies { 
-    classpath 'zone.freeman:aws-tomcat-deploy:1.1.1', 'com.amazonaws:aws-java-sdk:1.9.33', 'ch.ethz.ganymed:ganymed-ssh2:build210'
+    classpath 'zone.freeman:aws-tomcat-deploy:1.1.2', 'com.amazonaws:aws-java-sdk:1.9.33', 'ch.ethz.ganymed:ganymed-ssh2:build210'
   }
 }
 
